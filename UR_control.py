@@ -7,6 +7,16 @@ import time
 from pynput import mouse, keyboard
 import pid
 
+import cv2
+import numpy as np
+import cv2
+import cv2.aruco as aruco
+import glob
+import os
+import math
+import matplotlib.pyplot as plt
+from numpy import *
+
 acceleration = 0.5
 dt = 1.0 / 500  # 2ms
 joint_home = [-1.15, -1.71, 1.95, -1.51, -1.47, 0.023]
@@ -81,17 +91,93 @@ def trackCartesian(position):
     pidz.update(fdbkz)
     controller.speedL([pidx.output, pidy.output, pidz.output, 0, 0, 0], acceleration, dt)
 
+def position_transform(tvector):
+    ws_max = []
+    ws_min = []
+    rmatrix = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]])
+    tvec = np.dot(np.array(tvector), rmatrix)
+    tvec = tvec / 1000 + np.array([0, 0, 0])
+    position = np.zeros(3)
+    if ws_min[0] > tvec[0]:
+        position[0] = ws_min[0]
+    elif ws_max[0] < tvec[0]:
+        position[0] = ws_max[0]
+    else:
+        position[0] = tvec[0]
+    if ws_min[1] > tvec[1]:
+        position[1] = ws_min[1]
+    elif ws_max[1] < tvec[1]:
+        position[1] = ws_max[1]
+    else:
+        position[1] = tvec[1]
+    if ws_min[2] > tvec[2]:
+        position[2] = ws_min[2]
+    elif ws_max[2] < tvec[2]:
+        position[2] = ws_max[2]
+    else:
+        position[2] = tvec[2]
+    return position
 
 def moveHome():
     controller.moveJ(joint_home)
 
 
 def track():
-    position = [-0.68845, 0.17467, 0.256]
-    finish = False
+    cap = cv2.VideoCapture(1)
 
+    cap.set(3, 1280)
+    cap.set(4, 720)
+    cap.set(6, cv2.VideoWriter.fourcc('M', 'J', 'P', 'G'))
+    cap.set(5, 60)
+
+    calib_loc = 'F:/python/webDemo/images/calib/calib.yaml'
+
+    cv_file = cv2.FileStorage(calib_loc, cv2.FILE_STORAGE_READ)
+    mtx = cv_file.getNode("camera_matrix").mat()
+    dist = cv_file.getNode("dist_coeff").mat()
+
+    while (True):
+        ret, frame = cap.read()
+        if ret == True:
+            blur = cv2.GaussianBlur(frame, (11, 11), 0)
+            gray = cv2.cvtColor(blur, cv2.COLOR_BGR2GRAY)
+            aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_50)
+            parameters = aruco.DetectorParameters_create()
+            parameters.cornerRefinementMethod = aruco.CORNER_REFINE_CONTOUR
+            parameters.adaptiveThreshConstant = 10
+            corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
+
+        if np.all(ids != None):
+            rvec, tvec, _ = aruco.estimatePoseSingleMarkers(corners, 0.05, mtx, dist)
+        else:
+            pass
+    position = position_transform(tvec[0][0])
+    #position = [-0.68845, 0.17467, 0.256]
+
+    finish = False
+    counts = 0
+    currentposition = receiver.getActualTCPPose()
+    position = currentposition[0:3]
     while (not finish):
         start = time.time()
+
+        counts = (counts + 1) % 9
+        if(counts == 1):
+            ret, frame = cap.read()
+            if ret == True:
+                blur = cv2.GaussianBlur(frame, (11, 11), 0)
+                gray = cv2.cvtColor(blur, cv2.COLOR_BGR2GRAY)
+                aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_50)
+                parameters = aruco.DetectorParameters_create()
+                parameters.cornerRefinementMethod = aruco.CORNER_REFINE_CONTOUR
+                parameters.adaptiveThreshConstant = 10
+                corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
+
+            if np.all(ids != None):
+                rvec, tvec, _ = aruco.estimatePoseSingleMarkers(corners, 0.05, mtx, dist)
+                position = position_transform(tvec[0][0])
+            else:
+                pass
 
         trackCartesian(position)
         currentposition = receiver.getActualTCPPose()
@@ -116,6 +202,7 @@ def stopAll():
         controller.stopL(5)
         controller.stopJ(5)
         controller.stopScript()
+        print('Script Stopped')
     except:
         pass
 
@@ -156,25 +243,3 @@ if __name__ == "__main__":
         '<esc>': stopAll
     }) as h:
         h.join()
-
-    # with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
-    #     listener.join()
-
-    # while(True):
-    #
-    #     pass
-
-    # controller.speedL([-0.05, 0, 0, 0, 0, 0], acceleration, dt)
-
-    # Execute 500Hz control loop for 2 seconds, each cycle is 2ms
-    # for i in range(1000):
-    #     start = time.time()
-    #     #controller.speedL([-0.05,0,0,0,0,0], acceleration, dt)
-    #
-    #     end = time.time()
-    #     duration = end - start
-    #     if duration < dt:
-    #         time.sleep(dt - duration)
-    #
-    # controller.speedStop(10)
-    # controller.stopScript()

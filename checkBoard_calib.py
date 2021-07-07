@@ -7,7 +7,7 @@ import numpy as np
 import cv2
 import glob
 
-loc = '~/PycharmProjects/testDemo/images/calib/'  # Default location
+loc = '/home/changshanshi/Pictures/calibration/'  # Default location
 
 
 def calibrate(loc):

@@ -5,7 +5,7 @@ import cv2
 from datetime import datetime
 
 # loc = '~/PycharmProjects/testDemo/images/calib/'  # Default location
-loc = '~/'
+loc = '/home/changshanshi/Pictures/calibration/'
 # -*- encoding: utf-8 -*-
 
 import numpy as np
@@ -50,8 +50,10 @@ def CalibImage_collecting(loc,WIDTH,HEIGHT,FPS,BRIGHTNESS,CONTRAST,SATURATION,HU
 			print("Capturing image...")
 			img_filename = str(img_int) + '.png'
 			now = datetime.now()
-
+			if not os.path.exists(loc):
+				os.makedirs(loc)
 			cv2.imwrite(filename=loc + img_filename, img=frame)
+			print(loc + img_filename)
 			img_int += 1
 			print("Calib_image saved.")
 

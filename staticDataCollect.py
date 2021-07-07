@@ -50,7 +50,7 @@ if case ==4:
 # calib_loc = '/home/dong/PycharmProjects/testDemo/images/calib/calib_case1.yaml'
 # calib_loc = '/home/dong/PycharmProjects/testDemo/images/calib/calib_case2.yaml'
 # calib_loc = '/home/dong/PycharmProjects/testDemo/images/calib/calib_case3.yaml'
-calib_loc = '~/PycharmProjects/testDemo/images/calib/calib.yaml'
+calib_loc = '/home/changshanshi/Pictures/calibration/calib.yaml'
 
 cv_file = cv2.FileStorage(calib_loc, cv2.FILE_STORAGE_READ)
 
