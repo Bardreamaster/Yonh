@@ -92,11 +92,15 @@ def trackCartesian(position):
     controller.speedL([pidx.output, pidy.output, pidz.output, 0, 0, 0], acceleration, dt)
 
 def position_transform(tvector):
-    ws_max = []
-    ws_min = []
-    rmatrix = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]])
-    tvec = np.dot(np.array(tvector), rmatrix)
-    tvec = tvec / 1000 + np.array([0, 0, 0])
+    ws_max = [-0.2955759874679728, 0.5219420169792065, 0.5]
+    ws_min = [-0.8894115620774988, -0.16660725540676732, -0.04759156539705184]
+    # ws_max = [0.3, 0.5, 0.4]
+    # ws_min = [-0.3, -0.15, 0.0]
+    print('tvec: ' , tvector)
+    rmatrix = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
+    # tvec = np.dot(np.array(tvector), rmatrix)
+    tvec = np.dot( rmatrix,np.array(tvector))
+    tvec = tvec + np.array([-0.6283958, 0.1094664, 0.6])
     position = np.zeros(3)
     if ws_min[0] > tvec[0]:
         position[0] = ws_min[0]
@@ -123,37 +127,17 @@ def moveHome():
 
 
 def track():
-    cap = cv2.VideoCapture(1)
-
+    cap = cv2.VideoCapture(2)
     cap.set(3, 1280)
     cap.set(4, 720)
     cap.set(6, cv2.VideoWriter.fourcc('M', 'J', 'P', 'G'))
     cap.set(5, 60)
-
-    calib_loc = 'F:/python/webDemo/images/calib/calib.yaml'
-
+    calib_loc = '/home/changshanshi/Pictures/calibration/calib.yaml'
     cv_file = cv2.FileStorage(calib_loc, cv2.FILE_STORAGE_READ)
     mtx = cv_file.getNode("camera_matrix").mat()
     dist = cv_file.getNode("dist_coeff").mat()
 
-    while (True):
-        ret, frame = cap.read()
-        if ret == True:
-            blur = cv2.GaussianBlur(frame, (11, 11), 0)
-            gray = cv2.cvtColor(blur, cv2.COLOR_BGR2GRAY)
-            aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_50)
-            parameters = aruco.DetectorParameters_create()
-            parameters.cornerRefinementMethod = aruco.CORNER_REFINE_CONTOUR
-            parameters.adaptiveThreshConstant = 10
-            corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
-
-        if np.all(ids != None):
-            rvec, tvec, _ = aruco.estimatePoseSingleMarkers(corners, 0.05, mtx, dist)
-        else:
-            pass
-    position = position_transform(tvec[0][0])
     #position = [-0.68845, 0.17467, 0.256]
-
     finish = False
     counts = 0
     currentposition = receiver.getActualTCPPose()
@@ -162,8 +146,11 @@ def track():
         start = time.time()
 
         counts = (counts + 1) % 9
-        if(counts == 1):
+        # if counts == 1:
+        if 1:
             ret, frame = cap.read()
+            #cv2.imshow('frame', frame)
+            ids = 0
             if ret == True:
                 blur = cv2.GaussianBlur(frame, (11, 11), 0)
                 gray = cv2.cvtColor(blur, cv2.COLOR_BGR2GRAY)
@@ -173,17 +160,23 @@ def track():
                 parameters.adaptiveThreshConstant = 10
                 corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
 
-            if np.all(ids != None):
+            if np.all(ids == 4):
                 rvec, tvec, _ = aruco.estimatePoseSingleMarkers(corners, 0.05, mtx, dist)
                 position = position_transform(tvec[0][0])
+
+                #aruco.drawAxis(frame, mtx, dist, rvec[0], tvec[0], 0.1)
+                aruco.drawDetectedMarkers(frame, corners)
+                # display the resulting frame
+                cv2.waitKey(1)
+                cv2.imshow('frame', frame)
+                print(position)
             else:
                 pass
-
         trackCartesian(position)
         currentposition = receiver.getActualTCPPose()
-        if (currentposition[0] - position[0] < 0.01) and currentposition[1] - position[1] < 0.01 and currentposition[
-            2] - position[2] < 0.01:
-            finish = True
+        # if (currentposition[0] - position[0] < 0.01) and currentposition[1] - position[1] < 0.01 and currentposition[
+        #    2] - position[2] < 0.01:
+            # finish = True
 
         end = time.time()
         duration = end - start
@@ -239,7 +232,8 @@ if __name__ == "__main__":
         # 'u': unlockprotectiveStop,
         'r': reconnect_UR,
         'f': freedrive,
+        's': stopAll,
         '<ctrl>+f': endfreedrive,
-        '<esc>': stopAll
+        '<esc>': exit
     }) as h:
         h.join()

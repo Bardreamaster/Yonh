@@ -93,7 +93,7 @@ while (True):
 
 
 
-    if np.all(ids != None):
+    if np.all(ids ==6):
         usefulFlash +=1
 
         rvec, tvec ,_ = aruco.estimatePoseSingleMarkers(corners, 0.05, mtx, dist)
@@ -113,7 +113,7 @@ while (True):
         row.append(r1)
         pitch.append(r2)
         yaw.append(r3)
-
+        print(tvec)
     else:
         pass
 

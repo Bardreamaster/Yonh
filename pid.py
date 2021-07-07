@@ -43,7 +43,7 @@ class pid:
             self.last_error = error
             output = self.PTerm + (self.Ki * self.ITerm) + (self.Kd * self.DTerm)
             if(output > self.outputMax):
-                self.output = self.setoutputMax()
+                self.output = self.outputMax
             else:
                 self.output = output
 
