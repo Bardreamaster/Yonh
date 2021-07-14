@@ -26,7 +26,7 @@ class pid:
         self.DTerm = 0.0
         self.last_error = 0.0
         self.output = 0.0
-        self.outputMax = 0.08
+        self.outputMax = 0.07
         
     def update(self, feedback):
         error = self.target - feedback
@@ -42,8 +42,10 @@ class pid:
             self.last_time = self.current_time
             self.last_error = error
             output = self.PTerm + (self.Ki * self.ITerm) + (self.Kd * self.DTerm)
-            if(output > self.outputMax):
+            if output > self.outputMax:
                 self.output = self.outputMax
+            elif output < -self.outputMax:
+                self.output = -self.outputMax
             else:
                 self.output = output
 

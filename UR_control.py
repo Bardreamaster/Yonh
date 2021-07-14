@@ -9,13 +9,9 @@ import pid
 
 import cv2
 import numpy as np
-import cv2
 import cv2.aruco as aruco
-import glob
-import os
-import math
 import matplotlib.pyplot as plt
-from numpy import *
+from scipy.spatial.transform import Rotation as R
 
 acceleration = 0.5
 dt = 1.0 / 500  # 2ms
@@ -54,7 +50,11 @@ def reconnect_UR():
 
 
 def getCurrentCartesian():
-    print(receiver.getActualTCPPose())
+    # print(receiver.getActualTCPPose())
+    pose_now = R.from_rotvec(receiver.getActualTCPPose()[3:6])
+    pose_now = pose_now.as_euler('XYZ' , degrees=False)
+    # pose_now[0] = rotation_nojump(pose_now[0])
+    print(pose_now)
 
 
 def getCurrentQ():
@@ -76,6 +76,49 @@ def freedrive():
 def endfreedrive():
     controller.endTeachMode()
 
+def rotation_nojump(theta):
+    if theta >= 0:
+        return (theta - np.pi)
+    if theta < 0:
+        return (theta + np.pi)
+
+def trackpose(position, pose):
+    # tcppose = receiver.getActualTCPPose()
+    # fdbkx = tcppose[0]
+    # fdbky = tcppose[1]
+    # fdbkz = tcppose[2]
+
+    pose_now = R.from_rotvec(receiver.getActualTCPPose()[3:6]).as_euler('xyz', degrees=False)
+    pose_now[0] = rotation_nojump(pose_now[0])
+    fdbkr = pose_now[0]
+    fdbkp = pose_now[1]
+    fdbkf = pose_now[2]
+
+    # pidx.target = position[0]
+    # pidy.target = position[1]
+    # pidz.target = position[2]
+    #
+    # pose[1] = -pose[1]
+    # pose[2] = -pose[2]
+    pidr.target = pose[0]
+    pidp.target = pose[1]
+    pidf.target = pose[2]
+
+
+
+    # pidx.update(fdbkx)
+    # pidy.update(fdbky)
+    # pidz.update(fdbkz)
+    pidr.update(fdbkr)
+    pidp.update(fdbkp)
+    pidf.update(fdbkf)
+
+    print('real pose: ', pose_now[0],',',pose_now[1],',',pose_now[2])
+    print("target pose: ", pose[0],',',pose[1],',',pose[2])
+   # print('output ',pidr.output,',',pidp.output,',',pidf.output)
+    controller.speedL([0,0,0, pidr.output, pidp.output, pidf.output], acceleration, dt)
+    # controller.speedL([0,0,0,-pidr.output, pidp.output, 0], acceleration, dt)
+
 
 def trackCartesian(position):
     tcppose = receiver.getActualTCPPose()
@@ -96,7 +139,7 @@ def position_transform(tvector):
     ws_min = [-0.8894115620774988, -0.16660725540676732, -0.04759156539705184]
     # ws_max = [0.3, 0.5, 0.4]
     # ws_min = [-0.3, -0.15, 0.0]
-    print('tvec: ' , tvector)
+    #print('tvec: ' , tvector)
     rmatrix = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
     # tvec = np.dot(np.array(tvector), rmatrix)
     tvec = np.dot( rmatrix,np.array(tvector))
@@ -122,12 +165,53 @@ def position_transform(tvector):
         position[2] = tvec[2]
     return position
 
+def pose_transform(rvec):
+    pose = R.from_rotvec(rvec)
+    pose2 =  pose.as_euler("XYZ" , degrees=False)
+    print('xyz', pose2)
+    return pose.as_euler("zyx" , degrees=False)[::-1]
+
 def moveHome():
     controller.moveJ(joint_home)
 
+def rotax():
+    t2 = time.time()
+    while 1:
+        t1 = time.time()
+        controller.speedL([0, 0, 0, 0.06, 0, 0])
+        if (t1 - t2 > 3):
+            controller.speedStop(5)
+            break
+
+def rotay():
+    t2 = time.time()
+    while 1:
+        t1 = time.time()
+        controller.speedL([0, 0, 0, 0, 0.06, 0])
+        if (t1 - t2 > 3):
+            controller.speedStop(5)
+            break
+
+def rotaz():
+    t2 = time.time()
+    while 1:
+        t1 = time.time()
+        controller.speedL([0, 0, 0, 0, 0, 0.06])
+        if (t1 - t2 > 3):
+            controller.speedStop(5)
+            break
+
+def move():
+    t2 = time.time()
+    while 1 :
+        t1 = time.time()
+        controller.speedL([0,0,0,0,0.07,0])
+        if (t1-t2 > 3) :
+            controller.speedStop(5)
+            break
 
 def track():
-    cap = cv2.VideoCapture(2)
+    cap = cv2.VideoCapture(0)
     cap.set(3, 1280)
     cap.set(4, 720)
     cap.set(6, cv2.VideoWriter.fourcc('M', 'J', 'P', 'G'))
@@ -137,12 +221,16 @@ def track():
     mtx = cv_file.getNode("camera_matrix").mat()
     dist = cv_file.getNode("dist_coeff").mat()
 
-    #position = [-0.68845, 0.17467, 0.256]
     finish = False
     counts = 0
     currentposition = receiver.getActualTCPPose()
     position = currentposition[0:3]
+    pose = currentposition[3:6]
+
+
+
     while (not finish):
+        time.sleep(0.2)
         start = time.time()
 
         counts = (counts + 1) % 9
@@ -163,20 +251,23 @@ def track():
             if np.all(ids == 4):
                 rvec, tvec, _ = aruco.estimatePoseSingleMarkers(corners, 0.05, mtx, dist)
                 position = position_transform(tvec[0][0])
+                pose = pose_transform(rvec[0][0])
+                pose[0] = rotation_nojump(pose[0])
+                # aruco.drawAxis(frame, mtx, dist, rvec[0], tvec[0], 0.1)
+                # aruco.drawDetectedMarkers(frame, corners)
+                # # display the resulting frame
+                #
+                # cv2.waitKey(1)
+                # cv2.imshow('frame', frame)
 
-                #aruco.drawAxis(frame, mtx, dist, rvec[0], tvec[0], 0.1)
-                aruco.drawDetectedMarkers(frame, corners)
-                # display the resulting frame
-                cv2.waitKey(1)
-                cv2.imshow('frame', frame)
-                print(position)
+                # print(position)
+                # print('tvec: ', tvec[0][0])
+                print('pose: ', pose)
             else:
                 pass
-        trackCartesian(position)
-        currentposition = receiver.getActualTCPPose()
-        # if (currentposition[0] - position[0] < 0.01) and currentposition[1] - position[1] < 0.01 and currentposition[
-        #    2] - position[2] < 0.01:
-            # finish = True
+        #trackCartesian(position)
+
+        trackpose(position,pose)
 
         end = time.time()
         duration = end - start
@@ -213,7 +304,7 @@ if __name__ == "__main__":
     else:
         print("UR is online")
 
-    kp = 1
+    kp = 0.8
     ki = 0.0
     kd = 0.0
     pidx = pid.pid(kp, ki, kd)
@@ -222,6 +313,19 @@ if __name__ == "__main__":
     pidx.setSampleTime(dt)
     pidy.setSampleTime(dt)
     pidz.setSampleTime(dt)
+
+    pidr = pid.pid(kp, ki, kd)
+    pidp = pid.pid(kp, ki, kd)
+    pidf = pid.pid(kp, ki, kd)
+
+    pidr.setSampleTime(dt)
+    pidp.setSampleTime(dt)
+    pidf.setSampleTime(dt)
+    pidr.outputMax = 0.3
+    pidp.outputMax = 0.3
+    pidf.outputMax = 0.6
+    # plt.figure(0)
+    # plt.grid(True)
 
     with keyboard.GlobalHotKeys({
         'h': moveHome,
@@ -233,6 +337,10 @@ if __name__ == "__main__":
         'r': reconnect_UR,
         'f': freedrive,
         's': stopAll,
+        'm': move,
+        '1': rotax,
+        '2': rotay,
+        '3': rotaz,
         '<ctrl>+f': endfreedrive,
         '<esc>': exit
     }) as h:
