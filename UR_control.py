@@ -79,6 +79,25 @@ def freedrive():
 def endfreedrive():
     controller.endTeachMode()
 
+def gripper_open():
+    iocontroller.setToolDigitalOut(0,False)
+
+def gripper_close():
+    iocontroller.setToolDigitalOut(0, True)
+    # while True:
+    #     t1 = time.time()
+    #     iocontroller.setToolDigitalOut(0,True)
+    #     t2 = time.time()
+    #     dt = t2-t1
+    #     if dt<0.002:
+    #         time.sleep(dt)
+    #     t2 = time.time()
+    #     iocontroller.setToolDigitalOut(0,False)
+    #     t3 = time.time()
+    #     dt = t3 - t2
+    #     if dt < 0.0005:
+    #         time.sleep(dt)
+
 def rotation_nojump(theta):
     if theta >= 0:
         return (theta - np.pi)
@@ -301,6 +320,7 @@ if __name__ == "__main__":
         controller = rtde_control.RTDEControlInterface(ip_ur10)
         receiver = rtde_receive.RTDEReceiveInterface(ip_ur10)
         dashboard = dashboard_client.DashboardClient(ip_ur10)
+        iocontroller = rtde_io.RTDEIOInterface(ip_ur10)
     except:
         print('UR connection error!')
         exit()
@@ -348,6 +368,8 @@ if __name__ == "__main__":
         '1': rotax,
         '2': rotay,
         '3': rotaz,
+        '+': gripper_open,
+        '-': gripper_close,
         '<ctrl>+f': endfreedrive,
         '<esc>': exit
     }) as h:
