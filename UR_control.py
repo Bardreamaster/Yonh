@@ -52,7 +52,10 @@ def reconnect_UR():
 def getCurrentCartesian():
     # print(receiver.getActualTCPPose())
     pose_now = R.from_rotvec(receiver.getActualTCPPose()[3:6])
-    pose_now = pose_now.as_euler('XYZ' , degrees=False)
+
+    r2 = R.from_matrix([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
+    pose_now =  pose_now * r2
+    pose_now = pose_now.as_euler('XYZ', degrees=False)
     # pose_now[0] = rotation_nojump(pose_now[0])
     print(pose_now)
 
@@ -88,8 +91,11 @@ def trackpose(position, pose):
     # fdbky = tcppose[1]
     # fdbkz = tcppose[2]
 
-    pose_now = R.from_rotvec(receiver.getActualTCPPose()[3:6]).as_euler('xyz', degrees=False)
-    pose_now[0] = rotation_nojump(pose_now[0])
+    pose_now = R.from_rotvec(receiver.getActualTCPPose()[3:6])
+    r2 = R.from_matrix([[1,0,0],[0,-1,0],[0,0,-1]])
+    pose_now = pose_now * r2
+    pose_now = pose_now.as_euler('XYZ', degrees=False)
+    # pose_now[0] = rotation_nojump(pose_now[0])
     fdbkr = pose_now[0]
     fdbkp = pose_now[1]
     fdbkf = pose_now[2]
@@ -115,7 +121,7 @@ def trackpose(position, pose):
 
     print('real pose: ', pose_now[0],',',pose_now[1],',',pose_now[2])
     print("target pose: ", pose[0],',',pose[1],',',pose[2])
-   # print('output ',pidr.output,',',pidp.output,',',pidf.output)
+    print('output ',pidr.output,',',pidp.output,',',pidf.output)
     controller.speedL([0,0,0, pidr.output, pidp.output, pidf.output], acceleration, dt)
     # controller.speedL([0,0,0,-pidr.output, pidp.output, 0], acceleration, dt)
 
@@ -167,9 +173,9 @@ def position_transform(tvector):
 
 def pose_transform(rvec):
     pose = R.from_rotvec(rvec)
-    pose2 =  pose.as_euler("XYZ" , degrees=False)
-    print('xyz', pose2)
-    return pose.as_euler("zyx" , degrees=False)[::-1]
+    # pose2 =  pose.as_euler("XYZ" , degrees=False)
+    # print('xyz', pose2)
+    return pose.as_euler("XYZ" , degrees=False)
 
 def moveHome():
     controller.moveJ(joint_home)
@@ -251,7 +257,14 @@ def track():
             if np.all(ids == 4):
                 rvec, tvec, _ = aruco.estimatePoseSingleMarkers(corners, 0.05, mtx, dist)
                 position = position_transform(tvec[0][0])
-                pose = pose_transform(rvec[0][0])
+                pose = R.from_rotvec(rvec[0][0])
+                # pose = pose_transform(rvec[0][0])
+
+                # pose[0] = rotation_nojump(pose[0])
+                r1 = R.from_matrix(np.array([[1,0,0],[0,-1,0],[0,0,-1]]))
+                r3 = R.from_matrix(np.array([[-1,0,0],[0,1,0],[0,0,-1]]))
+                pose = pose
+                pose = pose.as_euler("XYZ", degrees=False)
                 pose[0] = rotation_nojump(pose[0])
                 # aruco.drawAxis(frame, mtx, dist, rvec[0], tvec[0], 0.1)
                 # aruco.drawDetectedMarkers(frame, corners)
@@ -262,7 +275,7 @@ def track():
 
                 # print(position)
                 # print('tvec: ', tvec[0][0])
-                print('pose: ', pose)
+                # print('pose: ', pose)
             else:
                 pass
         #trackCartesian(position)
