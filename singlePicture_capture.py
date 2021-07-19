@@ -5,7 +5,7 @@ import cv2
 from datetime import datetime
 
 # loc = '~/PycharmProjects/testDemo/images/calib/'  # Default location
-loc = '/home/changshanshi/Pictures/calibration/'
+loc = '/home/beckham/yonh/'
 # -*- encoding: utf-8 -*-
 
 import numpy as np

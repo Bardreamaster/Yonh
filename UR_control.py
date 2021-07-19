@@ -10,7 +10,7 @@ import pid
 import cv2
 import numpy as np
 import cv2.aruco as aruco
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation as R
 
 acceleration = 0.5
@@ -157,7 +157,7 @@ def trackCartesian(position):
 
 def position_transform(tvector):
     ws_max = [-0.2955759874679728, 0.5219420169792065, 0.5]
-    ws_min = [-0.8894115620774988, -0.16660725540676732, -0.04759156539705184]
+    ws_min = [-0.8894115620774988, -0.16660725540676732, 0.04759156539705184]
     # ws_max = [0.3, 0.5, 0.4]
     # ws_min = [-0.3, -0.15, 0.0]
     #print('tvec: ' , tvector)
@@ -237,7 +237,7 @@ def track():
     cap.set(4, 720)
     cap.set(6, cv2.VideoWriter.fourcc('M', 'J', 'P', 'G'))
     cap.set(5, 60)
-    calib_loc = '/home/changshanshi/Pictures/calibration/calib.yaml'
+    calib_loc = '/home/beckham/yonh/calib.yaml'
     cv_file = cv2.FileStorage(calib_loc, cv2.FILE_STORAGE_READ)
     mtx = cv_file.getNode("camera_matrix").mat()
     dist = cv_file.getNode("dist_coeff").mat()
