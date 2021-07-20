@@ -15,10 +15,11 @@ from scipy.spatial.transform import Rotation as R
 
 acceleration = 0.5
 dt = 1.0 / 500  # 2ms
-joint_home = [-1.15, -1.71, 1.95, -1.51, -1.47, 0.023]
+# joint_home = [-1.15, -1.71, 1.95, -1.51, -1.47, 0.023]
+joint_home = [-0.09823209444154912, -1.70023836712026, 1.8090785185443323, -1.701336523095602, -1.5844090620623987, 0.002959728240966797]  #235
 joint_speed = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 ip_ur10 = "192.168.1.10"
-
+finish = False
 
 def on_press(key):
     print(key);
@@ -156,15 +157,14 @@ def trackCartesian(position):
     controller.speedL([pidx.output, pidy.output, pidz.output, 0, 0, 0], acceleration, dt)
 
 def position_transform(tvector):
-    ws_max = [-0.2955759874679728, 0.5219420169792065, 0.5]
-    ws_min = [-0.8894115620774988, -0.16660725540676732, 0.04759156539705184]
-    # ws_max = [0.3, 0.5, 0.4]
-    # ws_min = [-0.3, -0.15, 0.0]
+    ws_max = [-0.40, 0.35, 0.5]
+    ws_min = [-0.95, -0.55, 0.04759156539705184]
+
     #print('tvec: ' , tvector)
     rmatrix = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
     # tvec = np.dot(np.array(tvector), rmatrix)
     tvec = np.dot( rmatrix,np.array(tvector))
-    tvec = tvec + np.array([-0.6283958, 0.1094664, 0.6])
+    tvec = tvec + np.array([-0.63, 0.0, 0.6])
     position = np.zeros(3)
     if ws_min[0] > tvec[0]:
         position[0] = ws_min[0]
@@ -231,6 +231,10 @@ def move():
             controller.speedStop(5)
             break
 
+def stoptrack():
+    global finish
+    finish = True
+
 def track():
     cap = cv2.VideoCapture(0)
     cap.set(3, 1280)
@@ -242,12 +246,12 @@ def track():
     mtx = cv_file.getNode("camera_matrix").mat()
     dist = cv_file.getNode("dist_coeff").mat()
 
+    global finish
     finish = False
     counts = 0
     currentposition = receiver.getActualTCPPose()
     position = currentposition[0:3]
     pose = currentposition[3:6]
-
 
 
     while (not finish):
@@ -278,9 +282,9 @@ def track():
                 aruco.drawAxis(frame, mtx, dist, rvec[0], tvec[0], 0.1)
                 aruco.drawDetectedMarkers(frame, corners)
                 # display the resulting frame
-
-                cv2.waitKey(1)
-                cv2.imshow('frame', frame)
+                #
+                # cv2.waitKey(1)
+                # cv2.imshow('frame', frame)
 
                 # print(position)
                 # print('tvec: ', tvec[0][0])
@@ -291,13 +295,17 @@ def track():
 
         trackpose(position,pose)
 
+        if currentposition[0] - position[0] < 0.01 and currentposition[1] - position[1] < 0.01 and \
+                currentposition[2] - position[2] < 0.01 :
+            finish = True
+            break
+
         end = time.time()
         duration = end - start
         if duration < dt:
             time.sleep(dt - duration)
 
     controller.speedStop(5)
-    controller.stopScript()
     print('Tracking END')
 
 
@@ -319,7 +327,7 @@ if __name__ == "__main__":
     try:
         controller = rtde_control.RTDEControlInterface(ip_ur10)
         receiver = rtde_receive.RTDEReceiveInterface(ip_ur10)
-        dashboard = dashboard_client.DashboardClient(ip_ur10)
+        # dashboard = dashboard_client.DashboardClient(ip_ur10)
         iocontroller = rtde_io.RTDEIOInterface(ip_ur10)
     except:
         print('UR connection error!')
@@ -327,7 +335,7 @@ if __name__ == "__main__":
     else:
         print("UR is online")
 
-    kp = 1
+    kp = 1.0
     kpr = 0.8
     ki = 0.0
     kd = 0.0
@@ -337,9 +345,9 @@ if __name__ == "__main__":
     pidx.setSampleTime(dt)
     pidy.setSampleTime(dt)
     pidz.setSampleTime(dt)
-    pidx.outputMax = 0.8
-    pidy.outputMax = 0.8
-    pidz.outputMax = 0.65
+    pidx.outputMax = 0.9
+    pidy.outputMax = 0.9
+    pidz.outputMax = 0.8
 
     pidr = pid.pid(kpr, ki, kd)
     pidp = pid.pid(kpr, ki, kd)
@@ -365,6 +373,7 @@ if __name__ == "__main__":
         'f': freedrive,
         's': stopAll,
         'm': move,
+        '0': stoptrack,
         '1': rotax,
         '2': rotay,
         '3': rotaz,
