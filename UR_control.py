@@ -236,12 +236,12 @@ def stoptrack():
     finish = True
 
 def track():
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(2)
     cap.set(3, 1280)
     cap.set(4, 720)
     cap.set(6, cv2.VideoWriter.fourcc('M', 'J', 'P', 'G'))
     cap.set(5, 60)
-    calib_loc = '/home/beckham/yonh/calib.yaml'
+    calib_loc = '/home/changshanshi/yonh/calib.yaml'
     cv_file = cv2.FileStorage(calib_loc, cv2.FILE_STORAGE_READ)
     mtx = cv_file.getNode("camera_matrix").mat()
     dist = cv_file.getNode("dist_coeff").mat()
@@ -283,9 +283,13 @@ def track():
                 aruco.drawDetectedMarkers(frame, corners)
                 # display the resulting frame
                 #
-                # cv2.waitKey(1)
-                # cv2.imshow('frame', frame)
+                key = cv2.waitKey(1)
+                cv2.imshow('frame', frame)
 
+                if key == ord('+'):
+                    iocontroller.setToolDigitalOut(0,False)
+                elif key == ord('-'):
+                    iocontroller.setToolDigitalOut(0, True)
                 # print(position)
                 # print('tvec: ', tvec[0][0])
                 # print('pose: ', pose)
