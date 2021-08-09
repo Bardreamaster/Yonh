@@ -1,0 +1,8 @@
+pynput==1.7.3
+scipy==1.7.0
+grpcio==1.39.0
+opencv_contrib_python==4.1.2.30
+matplotlib==3.3.4
+numpy==1.20.2
+grpc==1.0.0
+protobuf==3.17.3

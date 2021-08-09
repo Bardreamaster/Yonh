@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package robot;
+
+import "google/protobuf/empty.proto";
+
+option go_package = "./robot";
+
+service MachineController {
+  rpc GetJointList(google.protobuf.Empty) returns (JointList);
+  rpc GetJointStatus(Joint) returns (stream JointStatus);
+  rpc GetJointOption(Joint) returns (JointOption);
+
+  rpc MoveJointPosition(MovePositionCommand) returns (CommandResult);
+  rpc MoveJointsPosition(MovePositionCommands) returns (CommandResult);
+  rpc MoveJointVelocity(MoveVelocityCommand) returns (CommandResult);
+  rpc MoveJointsVelocity(MoveVelocityCommands) returns (CommandResult);
+  rpc StopJoint(StopCommand) returns (CommandResult);
+  rpc EnableJoint(EnableCommand) returns (CommandResult);
+  rpc DisableJoint(DisableCommand) returns (CommandResult);
+}
+
+message JointList {
+  repeated Joint joint = 1;
+}
+
+message Joint {
+  uint32 id = 1;
+}
+
+message JointStatus {
+  double position = 1;
+  double velocity = 2;
+  double torque = 3;
+  bool isEnable = 4;
+}
+
+message JointOption {
+  message Limit {
+    double min = 1;
+    double max = 2;
+  }
+  string name = 1;
+  double maxVelocity = 2;
+  double maxAcceleration = 3;
+  Limit limit = 4;
+}
+
+message MovePositionCommand {
+  Joint joint = 1;
+  double position = 2;
+}
+
+message MovePositionCommands {
+  repeated MovePositionCommand command = 1;
+}
+
+message MoveVelocityCommand {
+  Joint joint = 1;
+  double velocity = 2;
+}
+
+message MoveVelocityCommands {
+  repeated MoveVelocityCommand command = 1;
+}
+
+message StopCommand {
+  repeated Joint joint = 1;
+}
+
+message EnableCommand {
+  repeated Joint joint = 1;
+}
+
+message DisableCommand {
+  repeated Joint joint = 1;
+}
+
+message CommandResult {
+  string msg = 1;
+}
