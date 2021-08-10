@@ -162,7 +162,6 @@ def position_transform(tvector):
     # ws_min = [-0.3, -0.15, 0.0]
     #print('tvec: ' , tvector)
     rmatrix = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
-    # tvec = np.dot(np.array(tvector), rmatrix)
     tvec = np.dot( rmatrix,np.array(tvector))
     tvec = tvec + np.array([-0.6283958, 0.1094664, 0.6])
     position = np.zeros(3)
@@ -251,7 +250,7 @@ def track():
 
 
     while (not finish):
-        time.sleep(0.2)
+        # time.sleep(0.2)
         start = time.time()
 
         counts = (counts + 1) % 9
@@ -351,8 +350,6 @@ if __name__ == "__main__":
     pidr.outputMax = 0.3
     pidp.outputMax = 0.3
     pidf.outputMax = 0.6
-    # plt.figure(0)
-    # plt.grid(True)
 
     with keyboard.GlobalHotKeys({
         'h': moveHome,
