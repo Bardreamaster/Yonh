@@ -8,7 +8,8 @@ from asystmachine.controller import run_controller
 from asystmachine.joint import get_joints
 import pid
 
-address = '10.20.48.159:7000'
+# address = '10.20.48.159:7000'
+address = 'bardreamaster.xyz:6096'
 acceleration = 1000
 dt = 1.0 / 200  # 20ms
 
