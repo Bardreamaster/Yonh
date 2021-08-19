@@ -236,12 +236,12 @@ def stoptrack():
     finish = True
 
 def track():
-    cap = cv2.VideoCapture(2)
+    cap = cv2.VideoCapture(0)
     cap.set(3, 1280)
     cap.set(4, 720)
     cap.set(6, cv2.VideoWriter.fourcc('M', 'J', 'P', 'G'))
     cap.set(5, 60)
-    calib_loc = '/home/changshanshi/yonh/calib.yaml'
+    calib_loc = '/home/beckham/yonh/calib.yaml'
     cv_file = cv2.FileStorage(calib_loc, cv2.FILE_STORAGE_READ)
     mtx = cv_file.getNode("camera_matrix").mat()
     dist = cv_file.getNode("dist_coeff").mat()
@@ -299,10 +299,10 @@ def track():
 
         trackpose(position,pose)
 
-        if currentposition[0] - position[0] < 0.01 and currentposition[1] - position[1] < 0.01 and \
-                currentposition[2] - position[2] < 0.01 :
-            finish = True
-            break
+        # if currentposition[0] - position[0] < 0.01 and currentposition[1] - position[1] < 0.01 and \
+        #         currentposition[2] - position[2] < 0.01 :
+        #     finish = True
+        #     break
 
         end = time.time()
         duration = end - start
