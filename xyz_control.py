@@ -1,17 +1,27 @@
 import time
-from pynput import mouse, keyboard
+from pynput import keyboard
 import cv2
 import numpy as np
 import cv2.aruco as aruco
 from scipy.spatial.transform import Rotation as R
+from asystmachine.controller import Controller
 from asystmachine.controller import run_controller
 from asystmachine.joint import get_joints
 import pid
+from threading import Thread, Lock
 
 # address = '10.20.48.159:7000'
 address = 'bardreamaster.xyz:6096'
 acceleration = 1000
 dt = 1.0 / 200  # 20ms
+
+isListening = False
+isControlling = False
+isTracking = False
+isDetecting = False
+threads = []
+tvec_d = []
+rvec_d = []
 
 
 def getposition():
@@ -21,7 +31,8 @@ def getposition():
         position[0] = joints[0].get_status().position
         position[1] = joints[2].get_status().position
         position[2] = joints[1].get_status().position
-        print('real position:   ',format(position[0],'.2f'),',',format(position[1],'.2f'),',',format(position[2],'.2f'))
+        print('real position:   ', format(position[0], '.2f'), ',', format(position[1], '.2f'), ',',
+              format(position[2], '.2f'))
         return position
 
 
@@ -30,6 +41,7 @@ def rotation_nojump(theta):
         return (theta - np.pi)
     if theta < 0:
         return (theta + np.pi)
+
 
 def move_speed(vvec):
     with run_controller(address) as ctl:
@@ -41,11 +53,11 @@ def move_speed(vvec):
 
 def position_transform(tvector):
     # 393 325 468
-    ws_min = [-190,-150,-200]
-    ws_max = [190,150,200]
-    #print('tvec: ' , tvector)
+    ws_min = [-190, -150, -200]
+    ws_max = [190, 150, 200]
+    # print('tvec: ' , tvector)
     rmatrix = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, 1]])
-    tvec = np.dot( rmatrix,np.array(tvector))
+    tvec = np.dot(rmatrix, np.array(tvector))
     # tvec = tvec + np.array([-0.6283958, 0.1094664, 0.6])
     tvec = np.dot(400, tvec)
     position = np.zeros(3)
@@ -86,10 +98,13 @@ def trackCartesian(position):
     pidz.update(fdbkz)
 
     # move_speed([pidx.output,pidy.output,pidz.output])
-    move_speed([pidx.output,pidy.output,0])
+    move_speed([pidx.output, pidy.output, 0])
 
 
-def track():
+def detect():
+    global isDetecting
+    isDetecting = True
+
     cap = cv2.VideoCapture(2)
     cap.set(3, 1280)
     cap.set(4, 720)
@@ -99,24 +114,15 @@ def track():
     cv_file = cv2.FileStorage(calib_loc, cv2.FILE_STORAGE_READ)
     mtx = cv_file.getNode("camera_matrix").mat()
     dist = cv_file.getNode("dist_coeff").mat()
-
     finish = False
-    counts = 0
     currentposition = getposition()
     position = currentposition[0:3]
     pose = currentposition[3:6]
 
-    with run_controller(address) as ctl:
-        joints = get_joints()
-        for j in joints:
-            j.enable()
 
-    while (not finish):
-        # time.sleep(0.2)
-        start = time.time()
 
-        # counts = (counts + 1) % 9
-        # if counts == 1:
+    while (isDetecting):
+
         if 1:
             ret, frame = cap.read()
             # cv2.imshow('frame', frame)
@@ -143,26 +149,52 @@ def track():
                 # cv2.waitKey(1)
                 # cv2.imshow('frame', frame)
 
-                print('target        :   ',format(position[0],'.2f'),',',format(position[1],'.2f'),',',format(position[2],'.2f'))
+                print('target        :   ', format(position[0], '.2f'), ',', format(position[1], '.2f'), ',',
+                      format(position[2], '.2f'))
                 # print('tvec: ', tvec[0][0])
                 # print('pose: ', pose)
             else:
                 pass
 
-        trackCartesian(position)
+        global tvec_d
+        Lock.acquire()
+        tvec_d = position
+        Lock.release()
+
+    print('Tracking END')
+
+
+def track():
+    global isTracking
+    isTracking = track()
+
+    while (isDetecting & isTracking):
+        start = time.time()
+
+        # To do : rewrite the enable block
+        with run_controller(address) as ctl:
+            joints = get_joints()
+            for j in joints:
+                j.enable()
+
+
+        Lock.acquire()
+        trackCartesian(tvec_d)
+        Lock.release()
 
         end = time.time()
         duration = end - start
         if duration < dt:
             time.sleep(dt - duration)
 
-    print('Tracking END')
-
 
 def stopAll():
+    global isTracking,isDetecting
+    isDetecting = False
+    isTracking = False
     with run_controller(address) as ctl:
-       joints = get_joints()
-       for j in joints:
+        joints = get_joints()
+        for j in joints:
             j.stop()
 
 
@@ -177,10 +209,44 @@ def restart():
 
     print('joins enable')
 
+
+def keyboard_listening():
+    with keyboard.GlobalHotKeys({
+        # 'h': moveHome,
+        'd': detect,
+        't': track,
+        'r': restart,
+        # 'c': getCurrentCartesian,
+        # 'q': getCurrentQ,
+        # # 'p': protectiveStop,
+        # # 'u': unlockprotectiveStop,
+        # 'r': reconnect_UR,
+        # 'f': freedrive,
+        's': stopAll,
+        # 'm': move,
+        # '1': rotax
+        # '2': rotay,
+        # '3': rotaz,
+        # '+': gripper_open,
+        # '-': gripper_close,
+        # '<ctrl>+f': endfreedrive,
+        '<esc>': exit
+    }) as h:
+        h.join()
+    global isListening
+    isListening = True
+
+
 if __name__ == '__main__':
 
+    keyboardListener = Thread(keyboard_listening, )
+    keyboardListener.start()
+    threads.append(keyboardListener)
+
     try:
-        controller = run_controller(address)
+        # controller = run_controller(address)
+        controller = Controller(address)
+
     except:
         print('Connection error!')
         exit()
@@ -202,36 +268,3 @@ if __name__ == '__main__':
     pidx.outputMax = 200
     pidy.outputMax = 200
     pidz.outputMax = 200
-
-    # pidr = pid.pid(kpr, ki, kd)
-    # pidp = pid.pid(kpr, ki, kd)
-    # pidf = pid.pid(kpr, ki, kd)
-
-    # pidr.setSampleTime(dt)
-    # pidp.setSampleTime(dt)
-    # pidf.setSampleTime(dt)
-    # pidr.outputMax = 0.3
-    # pidp.outputMax = 0.3
-    # pidf.outputMax = 0.6
-
-    with keyboard.GlobalHotKeys({
-        # 'h': moveHome,
-        't': track,
-        'r': restart,
-        # 'c': getCurrentCartesian,
-        # 'q': getCurrentQ,
-        # # 'p': protectiveStop,
-        # # 'u': unlockprotectiveStop,
-        # 'r': reconnect_UR,
-        # 'f': freedrive,
-        's': stopAll,
-        # 'm': move,
-        # '1': rotax,
-        # '2': rotay,
-        # '3': rotaz,
-        # '+': gripper_open,
-        # '-': gripper_close,
-        # '<ctrl>+f': endfreedrive,
-        '<esc>': exit
-    }) as h:
-        h.join()

@@ -10,8 +10,9 @@ import pid
 import cv2
 import numpy as np
 import cv2.aruco as aruco
-import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation as R
+
+
 
 acceleration = 0.5
 dt = 1.0 / 500  # 2ms
