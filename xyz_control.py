@@ -8,10 +8,10 @@ from asystmachine.controller import run_controller
 from asystmachine.joint import get_joints
 import pid
 
-# address = '10.20.48.159:7000'
-address = 'bardreamaster.xyz:6096'
+address = '10.20.48.159:7000'
+# address = 'bardreamaster.xyz:6096'
 acceleration = 1000
-dt = 1.0 / 200  # 20ms
+dt = 1.0 / 100  # 10ms
 
 
 def getposition():
@@ -41,13 +41,13 @@ def move_speed(vvec):
 
 def position_transform(tvector):
     # 393 325 468
-    ws_min = [-190,-150,-200]
-    ws_max = [190,150,200]
+    ws_min = [-180,-150,-177.5]
+    ws_max = [180,150,150]
     #print('tvec: ' , tvector)
-    rmatrix = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, 1]])
+    rmatrix = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]])
     tvec = np.dot( rmatrix,np.array(tvector))
-    # tvec = tvec + np.array([-0.6283958, 0.1094664, 0.6])
     tvec = np.dot(400, tvec)
+    tvec = tvec + np.array([0.0, 0.0, 180])
     position = np.zeros(3)
     if ws_min[0] > tvec[0]:
         position[0] = ws_min[0]
@@ -86,11 +86,11 @@ def trackCartesian(position):
     pidz.update(fdbkz)
 
     # move_speed([pidx.output,pidy.output,pidz.output])
-    move_speed([pidx.output,pidy.output,0])
+    move_speed([pidx.output,pidy.output,pidz.output])
 
 
 def track():
-    cap = cv2.VideoCapture(2)
+    cap = cv2.VideoCapture(0)
     cap.set(3, 1280)
     cap.set(4, 720)
     cap.set(6, cv2.VideoWriter.fourcc('M', 'J', 'P', 'G'))
