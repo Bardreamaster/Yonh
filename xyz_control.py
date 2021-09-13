@@ -3,7 +3,6 @@ from pynput import keyboard
 import cv2
 import numpy as np
 import cv2.aruco as aruco
-from scipy.spatial.transform import Rotation as R
 from asystmachine.controller import Controller
 from asystmachine.controller import run_controller
 from asystmachine.joint import get_joints
