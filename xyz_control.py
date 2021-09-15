@@ -8,7 +8,7 @@ from asystmachine.controller import run_controller
 from asystmachine.joint import get_joints
 import pid
 
-address = '10.20.48.159:7000'
+address = '10.20.13.76:7000'
 # address = 'bardreamaster.xyz:6096'
 acceleration = 1000
 dt = 1.0 / 100  # 10ms
@@ -90,7 +90,7 @@ def trackCartesian(position):
 
 
 def track():
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(6)
     cap.set(3, 1280)
     cap.set(4, 720)
     cap.set(6, cv2.VideoWriter.fourcc('M', 'J', 'P', 'G'))

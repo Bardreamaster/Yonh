@@ -21,7 +21,7 @@ def CalibImage_collecting(loc,WIDTH,HEIGHT,FPS,BRIGHTNESS,CONTRAST,SATURATION,HU
 	time_start = time.perf_counter()
 	key = cv2.waitKey(1)
 	#print(cv2.VideoCapture(1))
-	cap = cv2.VideoCapture(2)
+	cap = cv2.VideoCapture(6)
 	cap.set(3, WIDTH)
 	cap.set(4,HEIGHT)
 	# cap.set(5,FPS)
