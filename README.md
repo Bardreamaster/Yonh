@@ -31,7 +31,7 @@ Position and speed control of robotic arms or other electromechanical systems us
 ## Demonstration 
 
 Bilibili：  
-<iframe height=480 weight=520 src="//player.bilibili.com/player.html?aid=932608844&bvid=BV1yM4y1V73B&cid=394773619&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
+[![Demo](https://res.cloudinary.com/marcomontalbano/image/upload/v1631803649/video_to_markdown/images/youtube--x4njxymneQA-c05b58ac6eb4c4700831b2b3070cd403.jpg)](https://www.bilibili.com/video/BV1yM4y1V73B?spm_id_from=333.999.0.0 "")  
 
 YouTube：
 [![Demo](https://res.cloudinary.com/marcomontalbano/image/upload/v1631803649/video_to_markdown/images/youtube--x4njxymneQA-c05b58ac6eb4c4700831b2b3070cd403.jpg)](https://www.youtube.com/watch?v=x4njxymneQA "")
