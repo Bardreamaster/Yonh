@@ -30,8 +30,8 @@ Position and speed control of robotic arms or other electromechanical systems us
 ```
 ## Demonstration 
 
-Bilibili：
-<iframe src="//player.bilibili.com/player.html?aid=932608844&bvid=BV1yM4y1V73B&cid=394773619&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
+Bilibili：  
+<iframe height=480 weight=520 src="//player.bilibili.com/player.html?aid=932608844&bvid=BV1yM4y1V73B&cid=394773619&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
 
 YouTube：
-<iframe width="560" height="315" src="https://www.youtube.com/embed/x4njxymneQA" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+[![Demo](https://res.cloudinary.com/marcomontalbano/image/upload/v1631803649/video_to_markdown/images/youtube--x4njxymneQA-c05b58ac6eb4c4700831b2b3070cd403.jpg)](https://www.youtube.com/watch?v=x4njxymneQA "")
