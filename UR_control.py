@@ -18,6 +18,9 @@ dt = 1.0 / 500  # 2ms
 joint_home = [-1.15, -1.71, 1.95, -1.51, -1.47, 0.023]
 joint_speed = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 ip_ur10 = "192.168.1.10"
+# ip_ur10 = "10.16.2.169"
+# ip_ur10 = "39.108.120.147"
+# ip_ur10 = "bardreamaster.xyz"
 
 
 def on_press(key):
@@ -135,9 +138,10 @@ def trackpose(position, pose):
     pidp.update(fdbkp)
     pidf.update(fdbkf)
 
-    print('real pose: ', pose_now[0],',',pose_now[1],',',pose_now[2])
-    print("target pose: ", pose[0],',',pose[1],',',pose[2])
-    print('output ',pidr.output,',',pidp.output,',',pidf.output)
+    # print('real pose: ', pose_now[0],',',pose_now[1],',',pose_now[2])
+    # print("target pose: ", pose[0],',',pose[1],',',pose[2])
+    # print('output ',pidr.output,',',pidp.output,',',pidf.output)
+    print('output ',pidx.output,',',pidy.output,',',pidz.output)
     controller.speedL([pidx.output, pidy.output, pidz.output, pidr.output, pidp.output, pidf.output], acceleration, dt)
 
 
@@ -156,14 +160,15 @@ def trackCartesian(position):
     controller.speedL([pidx.output, pidy.output, pidz.output, 0, 0, 0], acceleration, dt)
 
 def position_transform(tvector):
-    ws_max = [-0.2955759874679728, 0.5219420169792065, 0.5]
-    ws_min = [-0.8894115620774988, -0.16660725540676732, -0.04759156539705184]
+    ws_max = [0.70, 0.0, 0.692]
+    ws_min = [-0.22, -0.757, 0.22]
     # ws_max = [0.3, 0.5, 0.4]
     # ws_min = [-0.3, -0.15, 0.0]
-    #print('tvec: ' , tvector)
+    # print('tvec: ' , tvector)
     rmatrix = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
     tvec = np.dot( rmatrix,np.array(tvector))
-    tvec = tvec + np.array([-0.6283958, 0.1094664, 0.6])
+    tvec = tvec + np.array([0.3, -0.45, 0.9])
+    # print('new_tvec: ' , tvec)
     position = np.zeros(3)
     if ws_min[0] > tvec[0]:
         position[0] = ws_min[0]
@@ -236,7 +241,7 @@ def track():
     cap.set(4, 720)
     cap.set(6, cv2.VideoWriter.fourcc('M', 'J', 'P', 'G'))
     cap.set(5, 60)
-    calib_loc = '/home/changshanshi/Pictures/calibration/calib.yaml'
+    calib_loc = './config/calib60.yaml'
     cv_file = cv2.FileStorage(calib_loc, cv2.FILE_STORAGE_READ)
     mtx = cv_file.getNode("camera_matrix").mat()
     dist = cv_file.getNode("dist_coeff").mat()
