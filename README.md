@@ -1,8 +1,6 @@
----
-description: You only need a cube in your hands to control almost all robots.
----
-
 # Yonh - you only need hands
+
+You only need a cube in your hands to control almost all robots.
 
 ### Introduction
 
